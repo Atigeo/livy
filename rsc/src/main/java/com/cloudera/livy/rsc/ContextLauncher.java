@@ -27,6 +27,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -37,9 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.attribute.PosixFilePermission.*;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.spark.launcher.SparkLauncher;
@@ -97,17 +95,17 @@ class ContextLauncher implements ContextInfo {
       synchronized (handler) {
         while (handler.driverAddress == null && now < deadline) {
           handler.wait(Math.min(step, deadline - now));
-          Preconditions.checkState(handler.driverAddress != null || !child.isFailed(),
+          Utils.checkState(handler.driverAddress != null || !child.isFailed(),
             "Child has exited before address information was received.");
           now = System.nanoTime();
         }
       }
-      Preconditions.checkState(handler.driverAddress != null,
+      Utils.checkState(handler.driverAddress != null,
         "Timed out waiting for driver connection information.");
       driverAddress = handler.driverAddress;
     } catch (Exception e) {
       factory.getServer().unregisterClient(clientId);
-      throw Throwables.propagate(e);
+      throw Utils.propagate(e);
     } finally {
       handler.dispose();
     }
@@ -160,19 +158,19 @@ class ContextLauncher implements ContextInfo {
     String livyJars = conf.get(LIVY_JARS);
     if (livyJars == null) {
       String livyHome = System.getenv("LIVY_HOME");
-      Preconditions.checkState(livyHome != null,
+      Utils.checkState(livyHome != null,
         "Need one of LIVY_HOME or %s set.", LIVY_JARS.key());
       File rscJars = new File(livyHome, "rsc-jars");
       if (!rscJars.isDirectory()) {
         rscJars = new File(livyHome, "rsc/target/jars");
       }
-      Preconditions.checkState(rscJars.isDirectory(),
+      Utils.checkState(rscJars.isDirectory(),
         "Cannot find 'client-jars' directory under LIVY_HOME.");
       List<String> jars = new ArrayList<>();
       for (File f : rscJars.listFiles()) {
          jars.add(f.getAbsolutePath());
       }
-      livyJars = Joiner.on(",").join(jars);
+      livyJars = Utils.join(jars, ",");
     }
     merge(conf, SPARK_JARS_KEY, livyJars, ",");
 
@@ -208,7 +206,7 @@ class ContextLauncher implements ContextInfo {
           try {
             RSCDriverBootstrapper.main(new String[] { confFile.getAbsolutePath() });
           } catch (Exception e) {
-            throw Throwables.propagate(e);
+            throw Utils.propagate(e);
           }
         }
       };
@@ -234,7 +232,7 @@ class ContextLauncher implements ContextInfo {
       String principal = conf.get("xpatterns.principal");
       String keytabFile = conf.get("xpatterns.keytabfile");
 
-      Preconditions.checkArgument(master != null, "spark.master is not defined.");
+      Utils.checkArgument(master != null, "spark.master is not defined.");
       launcher.setMaster(master);
       launcher.setPropertiesFile(confFile.getAbsolutePath());
       launcher.addSparkArg("--conf", "spark.yarn.keytab=" + keytabFile);
@@ -251,7 +249,7 @@ class ContextLauncher implements ContextInfo {
   }
 
   private static void merge(RSCConf conf, String key, String livyConf, String sep) {
-    String confValue = Joiner.on(sep).skipNulls().join(livyConf, conf.get(key));
+    String confValue = Utils.join(Arrays.asList(livyConf, conf.get(key)), sep);
     conf.set(key, confValue);
   }
 
