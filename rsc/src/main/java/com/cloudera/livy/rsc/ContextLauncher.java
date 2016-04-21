@@ -41,6 +41,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import io.netty.channel.ChannelHandlerContext;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.spark.launcher.SparkLauncher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -230,13 +231,20 @@ class ContextLauncher implements ContextInfo {
       // mode, the driver options need to be passed directly on the command line. Otherwise,
       // SparkSubmit will take care of that for us.
       String master = conf.get("spark.master");
+      String principal = conf.get("xpatterns.principal");
+      String keytabFile = conf.get("xpatterns.keytabfile");
+
       Preconditions.checkArgument(master != null, "spark.master is not defined.");
       launcher.setMaster(master);
       launcher.setPropertiesFile(confFile.getAbsolutePath());
+      launcher.addSparkArg("--conf", "spark.yarn.keytab=" + keytabFile);
+      launcher.addSparkArg("--conf","spark.yarn.principal=" + principal);
+
       launcher.setMainClass(RSCDriverBootstrapper.class.getName());
       if (conf.get(PROXY_USER) != null) {
         launcher.addSparkArg("--proxy-user", conf.get(PROXY_USER));
       }
+
 
       return new ChildProcess(conf, launcher.launch(), confFile);
     }

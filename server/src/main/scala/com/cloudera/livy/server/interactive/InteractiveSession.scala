@@ -47,6 +47,8 @@ object InteractiveSession {
   val LivyReplJars = "livy.repl.jars"
   val SparkSubmitPyFiles = "spark.submit.pyFiles"
   val SparkYarnIsPython = "spark.yarn.isPython"
+  val xPatternsKerberosKeytab = "xpatterns.keytabfile"
+  val xPatternsKerberosPrincipal = "xpatterns.principal"
 }
 
 class InteractiveSession(
@@ -62,6 +64,10 @@ class InteractiveSession(
   protected implicit def executor: ExecutionContextExecutor = ExecutionContext.global
   protected implicit def jsonFormats: Formats = DefaultFormats
 
+
+  private val XPATTERNS_KERBEROS_PRINCIPAL = LivyConf.Entry("livy.xpatterns.principal.id", "xpatterns@STAGING.XPATTERNS.COM")
+  private val XPATTERNS_KERBEROS_KEYTAB_PATH = LivyConf.Entry("livy.xpatterns.keytabfile.path", "/krb5.keytab")
+
   protected[this] var _state: SessionState = SessionState.Starting()
 
   private val client = {
@@ -73,6 +79,9 @@ class InteractiveSession(
       .setAll(Option(request.conf).map(_.asJava).getOrElse(new JHashMap()))
       .setConf("livy.client.sessionId", id.toString)
       .setConf(RSCConf.Entry.DRIVER_CLASS.key(), "com.cloudera.livy.repl.ReplDriver")
+      .setConf(xPatternsKerberosKeytab, livyConf.get(XPATTERNS_KERBEROS_KEYTAB_PATH))
+      .setConf(xPatternsKerberosPrincipal, livyConf.get(XPATTERNS_KERBEROS_PRINCIPAL))
+
 
     request.kind match {
       case PySpark() =>
