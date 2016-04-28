@@ -40,6 +40,8 @@ import static java.nio.file.attribute.PosixFilePermission.*;
 
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.yarn.util.SystemClock;
+import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec;
 import org.apache.spark.launcher.SparkLauncher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +65,8 @@ class ContextLauncher implements ContextInfo {
   private static final String SPARK_ARCHIVES_KEY = "spark.yarn.dist.archives";
   private static final String SPARK_HOME_ENV = "SPARK_HOME";
   private static final String SPARK_HOME_KEY = "spark.home";
+  private static final String SPARK_PYSPARK_PYTHON_DRIVER = "spark.yarn.appMasterEnv.PYSPARK_DRIVER_PYTHON";
+  private static final String SPARK_PYSPARK_PYTHON = "spark.yarn.appMasterEnv.PYSPARK_PYTHON";
 
   private final String clientId;
   private final String secret;
@@ -144,12 +148,36 @@ class ContextLauncher implements ContextInfo {
     }
   }
 
+
+
+  private static String getExtraSparkJars(String sparkHome, RSCConf conf){
+      File dataNucleusJars = new File(sparkHome + "/lib/");
+      Utils.checkState(dataNucleusJars.isDirectory(), "Cannot find the lib directory of this spark distribution!");
+      ArrayList<String> jars = new ArrayList<>();
+      try{
+          for(File f : dataNucleusJars.listFiles()){
+              if(f.getCanonicalPath().contains("datanucleus-")){
+                  jars.add(f.getAbsolutePath());
+              }
+          }
+
+      }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+      return Utils.join(jars, ",");
+  }
+
   private static ChildProcess startDriver(
       final RpcServer rpcServer,
       final RSCConf conf,
       final String clientId,
       final String secret) throws IOException {
     // Write out the config file used by the remote context.
+    System.out.println("The RPCServer's address is: " + rpcServer.getAddress());
+
+
     conf.set(LAUNCHER_ADDRESS, rpcServer.getAddress());
     conf.set(LAUNCHER_PORT, rpcServer.getPort());
     conf.set(CLIENT_ID, clientId);
@@ -172,9 +200,20 @@ class ContextLauncher implements ContextInfo {
       }
       livyJars = Utils.join(jars, ",");
     }
-    merge(conf, SPARK_JARS_KEY, livyJars, ",");
 
-    if ("sparkr".equals(conf.get("session.kind"))) {
+      String sparkHome = conf.get(SPARK_HOME_KEY);
+      if (sparkHome == null) {
+          sparkHome = System.getenv(SPARK_HOME_ENV);
+      }
+
+      if (sparkHome == null) {
+          sparkHome = System.getProperty(SPARK_HOME_KEY);
+      }
+
+      String extraSparkJars = getExtraSparkJars(sparkHome, conf);
+      merge(conf, SPARK_JARS_KEY, livyJars + "," +  extraSparkJars, ",");
+
+      if ("sparkr".equals(conf.get("session.kind"))) {
       merge(conf, SPARK_ARCHIVES_KEY, conf.get(RSCConf.Entry.SPARKR_PACKAGE), ",");
     }
 
@@ -213,14 +252,8 @@ class ContextLauncher implements ContextInfo {
       return new ChildProcess(conf, child, confFile);
     } else {
       final SparkLauncher launcher = new SparkLauncher();
-      String sparkHome = conf.get(SPARK_HOME_KEY);
-      if (sparkHome == null) {
-        sparkHome = System.getenv(SPARK_HOME_ENV);
-      }
 
-      if (sparkHome == null) {
-        sparkHome = System.getProperty(SPARK_HOME_KEY);
-      }
+
       launcher.setSparkHome(sparkHome);
 
       launcher.setAppResource("spark-internal");
@@ -229,20 +262,34 @@ class ContextLauncher implements ContextInfo {
       // mode, the driver options need to be passed directly on the command line. Otherwise,
       // SparkSubmit will take care of that for us.
       String master = conf.get("spark.master");
-      String principal = conf.get("xpatterns.principal");
-      String keytabFile = conf.get("xpatterns.keytabfile");
+      String principal = conf.get("spark.yarn.principal");
+      String keytabFile = conf.get("spark.yarn.keytabfile");
+      String driverPythonPath = conf.get(SPARK_PYSPARK_PYTHON_DRIVER);
+      String slavePythonPath = conf.get(SPARK_PYSPARK_PYTHON);
 
       Utils.checkArgument(master != null, "spark.master is not defined.");
       launcher.setMaster(master);
       launcher.setPropertiesFile(confFile.getAbsolutePath());
-      launcher.addSparkArg("--conf", "spark.yarn.keytab=" + keytabFile);
-      launcher.addSparkArg("--conf","spark.yarn.principal=" + principal);
+
+      // Add the keytab and principal with which the SparkContext should connect
+      // to a kerberized cluster
+      if(keytabFile != null && principal != null){
+        launcher.setConf("spark.yarn.keytab", keytabFile);
+        launcher.setConf("spark.yarn.principal", principal);
+      }
+
+      if(driverPythonPath != null){
+        launcher.setConf(SPARK_PYSPARK_PYTHON_DRIVER, driverPythonPath);
+      }
+      if(slavePythonPath != null){
+        launcher.setConf(SPARK_PYSPARK_PYTHON, slavePythonPath);
+      }
+
 
       launcher.setMainClass(RSCDriverBootstrapper.class.getName());
       if (conf.get(PROXY_USER) != null) {
         launcher.addSparkArg("--proxy-user", conf.get(PROXY_USER));
       }
-
 
       return new ChildProcess(conf, launcher.launch(), confFile);
     }

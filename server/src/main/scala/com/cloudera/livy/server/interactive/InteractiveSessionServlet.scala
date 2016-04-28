@@ -141,4 +141,29 @@ class InteractiveSessionServlet(livyConf: LivyConf)
     }
   }
 
+  // This code is supposed to allow you to post a pickled object through the network (encoded in base64)
+  // and then upload it as NAME inside the python code
+  post("/:id/statements-pickle-code/:name"){
+    withSession { session =>
+      var pickleCode: String = ""
+      if(!session.pickleInitialized){
+        pickleCode += "import cPickle\nimport base64\n"
+        session.pickleInitialized = true
+      }
+      val body: String =  request.body.toString
+      val functionName: String = params.get("name").mkString
+      pickleCode += functionName + " = cPickle.loads(base64.b64decode(\"" + body + "\"))"
+
+      val req = ExecuteRequest(pickleCode)
+      val statement = session.executeStatement(req)
+
+      Created(statementView(statement),
+        headers = Map(
+          "Location" -> url(getStatement,
+            "id" -> session.id.toString,
+            "statementId" -> statement.id.toString)))
+    }
+
+  }
+
 }

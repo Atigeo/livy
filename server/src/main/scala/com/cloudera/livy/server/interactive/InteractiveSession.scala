@@ -47,8 +47,10 @@ object InteractiveSession {
   val LivyReplJars = "livy.repl.jars"
   val SparkSubmitPyFiles = "spark.submit.pyFiles"
   val SparkYarnIsPython = "spark.yarn.isPython"
-  val xPatternsKerberosKeytab = "xpatterns.keytabfile"
-  val xPatternsKerberosPrincipal = "xpatterns.principal"
+  val SparkKerberosKeytab = "spark.yarn.keytabfile"
+  val SparkKerberosPrincipal = "spark.yarn.principal"
+  val SparkDriverPythonPath = "spark.yarn.appMasterEnv.PYSPARK_DRIVER_PYTHON"
+  val SparkSlavePythonPath =  "spark.yarn.appMasterEnv.PYSPARK_PYTHON"
 }
 
 class InteractiveSession(
@@ -65,8 +67,13 @@ class InteractiveSession(
   protected implicit def jsonFormats: Formats = DefaultFormats
 
 
-  private val XPATTERNS_KERBEROS_PRINCIPAL = LivyConf.Entry("livy.xpatterns.principal.id", "xpatterns@STAGING.XPATTERNS.COM")
-  private val XPATTERNS_KERBEROS_KEYTAB_PATH = LivyConf.Entry("livy.xpatterns.keytabfile.path", "/krb5.keytab")
+  private val SPARK_KERBEROS_PRINCIPAL = LivyConf.Entry("livy.spark.principal.id", null)
+  private val SPARK_KERBEROS_KEYTAB_PATH = LivyConf.Entry("livy.spark.keytabfile.path", null)
+  private val SPARK_DRIVER_PYTHON_PATH = LivyConf.Entry("livy.spark.yarn.driver.pythonpath", null)
+  private val SPARK_SLAVE_PYTHON_PATH = LivyConf.Entry("livy.spark.yarn.slave.pythonpath", null)
+  private val LIVY_LOCAL_SERVER_ADDRESS = LivyConf.Entry("livy.local.server.address", null)
+
+
 
   protected[this] var _state: SessionState = SessionState.Starting()
 
@@ -79,9 +86,14 @@ class InteractiveSession(
       .setAll(Option(request.conf).map(_.asJava).getOrElse(new JHashMap()))
       .setConf("livy.client.sessionId", id.toString)
       .setConf(RSCConf.Entry.DRIVER_CLASS.key(), "com.cloudera.livy.repl.ReplDriver")
-      .setConf(xPatternsKerberosKeytab, livyConf.get(XPATTERNS_KERBEROS_KEYTAB_PATH))
-      .setConf(xPatternsKerberosPrincipal, livyConf.get(XPATTERNS_KERBEROS_PRINCIPAL))
+      .setConf(SparkKerberosKeytab, livyConf.get(SPARK_KERBEROS_KEYTAB_PATH))
+      .setConf(SparkKerberosPrincipal, livyConf.get(SPARK_KERBEROS_PRINCIPAL))
+      .setConf(SparkDriverPythonPath, livyConf.get(SPARK_DRIVER_PYTHON_PATH))
+      .setConf(SparkSlavePythonPath, livyConf.get(SPARK_SLAVE_PYTHON_PATH))
 
+    // Set the local server address - used when trying to serve livy from a docker container because otherwise
+    // you would get the address that's inside the container
+    builder.setConf(RSCConf.Entry.RPC_SERVER_ADDRESS.key(), livyConf.get(LIVY_LOCAL_SERVER_ADDRESS));
 
     request.kind match {
       case PySpark() =>
@@ -94,6 +106,7 @@ class InteractiveSession(
       case _ =>
     }
     builder.setConf("session.kind", request.kind.toString)
+
 
     sys.env.get("LIVY_REPL_JAVA_OPTS").foreach { opts =>
       val userOpts = request.conf.get(SparkLauncher.DRIVER_EXTRA_JAVA_OPTIONS)
@@ -168,6 +181,8 @@ class InteractiveSession(
   def kind: Kind = request.kind
 
   def proxyUser: Option[String] = _proxyUser
+
+  var pickleInitialized: Boolean = false
 
   def statements: IndexedSeq[Statement] = _statements
 

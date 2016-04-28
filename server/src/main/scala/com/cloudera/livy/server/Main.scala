@@ -47,16 +47,12 @@ object Main extends Logging {
   private val KERBEROS_KEYTAB = LivyConf.Entry("livy.server.auth.kerberos.keytab", null)
   private val KERBEROS_NAME_RULES = LivyConf.Entry("livy.server.auth.kerberos.name_rules",
     "DEFAULT")
-  private val XPATTERNS_KERBEROS_PRINCIPAL = LivyConf.Entry("livy.xpatterns.principal.id", "xpatterns@STAGING.XPATTERNS.COM")
-  private val XPATTERNS_KERBEROS_KEYTAB_PATH = LivyConf.Entry("livy.xpatterns.keytabfile.path", "/krb5.keytab")
 
   def main(args: Array[String]): Unit = {
     val livyConf = new LivyConf().loadFromFile("livy-defaults.conf")
     val host = livyConf.get(SERVER_HOST)
     val port = livyConf.getInt(SERVER_PORT)
 
-    System.setProperty("java.security.krb5.realm","STAGING.XPATTERNS.COM")
-    System.setProperty("java.security.krb5.kdc", "10.0.2.181")
 
 
     // Make sure the `spark-submit` program exists, otherwise much of livy won't work.

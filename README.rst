@@ -142,7 +142,7 @@ In particular the ``YARN mode`` (default is ``local`` process for development) c
 
 .. _livy-defaults.conf.template: https://github.com/cloudera/livy/blob/master/apps/spark/java/conf/livy-defaults.conf.template
 
-
+To set the
 Spark Example
 =============
 
@@ -467,6 +467,49 @@ Request Body
 +======+=====================+========+
 | code | The code to execute | string |
 +------+---------------------+--------+
+
+Response Body
+^^^^^^^^^^^^^
+
+The `statement`_ object.
+
+POST /sessions/{sessionId}/statements-pickle-code/{name}
+--------------------------------------------------------
+
+Post an object that is pickled with cloudpickle or similar as a base64 string and register it in the context as
+{name}. The object can the be referenced inside the context easily.
+
+Example:
+
+
+.. code:: python
+
+    >>> def a():
+    ...     print 'hello, a'
+    ...
+    >>> import cloudpickle
+    >>> import base64
+    >>>
+    >>>
+    >>> data = base64.b64encode(cloudpickle.dumps(a))
+    >>> data
+    'gAJjY2xvdWRwaWNrbGUKX2ZpbGxfZnVuY3Rpb24KcQAoY2Nsb3VkcGlja2xlCl9tYWtlX3NrZWxfZnVuYwpxAWNjbG91ZHBpY2tsZQpfYnVpbHRpbl90eXBlCnECVQhDb2RlVHlwZXEDhXEEUnEFKEsASwBLAUtDVQlkAQBHSGQAAFNxBk5VCGhlbGxvLCBhcQeGcQgpKVUHPHN0ZGluPnEJVQFhcQpLAVUCAAFxCykpdHEMUnENXXEOfXEPh3EQUnERfXESTn1xE3RSLg=='
+
+    >>> r = requests.post(session_url + '/statements-pickle-code/a', data=data)
+    {u'output': {u'status': u'ok', u'execution_count': 1, u'data': {u'text/plain': u''}}, u'state': u'available', u'id': 1}
+
+    >>> r = requests.post(session_url+'/statements', data = json.dumps({'code': 'a()'}))
+    {u'output': {u'status': u'ok', u'execution_count': 2, u'data': {u'text/plain': u'hello, a'}}, u'state': u'available', u'id': 2}
+
+
+Request Body
+^^^^^^^^^^^^
+
++--------------+---------------------------+--------+
+| name         | description               | type   |
++==============+=====================+==============+
+| request.body | The base64 encoded string | string |
++--------------+---------------------------+--------+
 
 Response Body
 ^^^^^^^^^^^^^

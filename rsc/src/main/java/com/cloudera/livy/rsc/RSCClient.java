@@ -31,6 +31,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
+import io.netty.util.internal.SystemPropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,9 @@ public class RSCClient implements LivyClient {
         conf.getInt(RPC_MAX_THREADS),
         Utils.newDaemonThreadFactory("Client-RPC-Handler-" + ctx.getClientId() + "-%d"));
 
+    LOG.info("Trying to connect to the RSCServer on the following address");
+    LOG.info("Address: " + ctx.getRemoteAddress());
+    LOG.info("Port: " + ctx.getRemotePort());
     try {
       this.driverRpc = Rpc.createClient(conf,
         eventLoopGroup,
