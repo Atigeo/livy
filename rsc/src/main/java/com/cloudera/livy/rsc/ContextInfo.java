@@ -22,16 +22,24 @@ package com.cloudera.livy.rsc;
  */
 class ContextInfo {
 
-  final String remoteAddress;
-  final int remotePort;
-  final String clientId;
-  final String secret;
+    final String remoteAddress;
+    final int remotePort;
+    final String clientId;
+    final String secret;
 
-  ContextInfo(String remoteAddress, int remotePort, String clientId, String secret) {
-    this.remoteAddress = remoteAddress;
-    this.remotePort = remotePort;
-    this.clientId = clientId;
-    this.secret = secret;
-  }
+    ContextInfo(String remoteAddress, int remotePort, String clientId, String secret) {
+        this.remoteAddress = remoteAddress;
+        this.remotePort = remotePort;
+        this.clientId = clientId;
+        this.secret = secret;
+    }
+
+    public String getRemoteAddress() {
+        return this.remoteAddress;
+    }
+
+    public int getRemotePort() {
+        return this.remotePort;
+    }
 
 }

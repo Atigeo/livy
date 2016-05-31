@@ -48,22 +48,21 @@ object InteractiveSession {
   val SparkKerberosKeytab = "spark.yarn.keytabfile"
   val SparkKerberosPrincipal = "spark.yarn.principal"
   val SparkDriverPythonPath = "spark.yarn.appMasterEnv.PYSPARK_DRIVER_PYTHON"
-  val SparkSlavePythonPath =  "spark.yarn.appMasterEnv.PYSPARK_PYTHON"
+  val SparkSlavePythonPath = "spark.yarn.appMasterEnv.PYSPARK_PYTHON"
 }
 
 class InteractiveSession(
-    id: Int,
-    owner: String,
-    override val proxyUser: Option[String],
-    livyConf: LivyConf,
-    request: CreateInteractiveRequest)
+                          id: Int,
+                          owner: String,
+                          override val proxyUser: Option[String],
+                          livyConf: LivyConf,
+                          request: CreateInteractiveRequest)
   extends Session(id, owner, livyConf) {
 
   import InteractiveSession._
 
   private implicit def jsonFormats: Formats = DefaultFormats
 
-  private var _state: SessionState = SessionState.Starting()
 
   private val operations = mutable.Map[Long, String]()
   private val operationCounter = new AtomicLong(0)
@@ -77,8 +76,7 @@ class InteractiveSession(
   private val LIVY_LOCAL_SERVER_ADDRESS = LivyConf.Entry("livy.local.server.address", null)
 
 
-
-  protected[this] var _state: SessionState = SessionState.Starting()
+  private var _state: SessionState = SessionState.Starting()
 
   private val client = {
     val conf = prepareConf(request.conf, request.jars, request.files, request.archives,
@@ -148,8 +146,9 @@ class InteractiveSession(
   // Send a dummy job that will return once the client is ready to be used, and set the
   // state to "idle" at that point.
   client.submit(new PingJob()).addListener(new JobHandle.Listener[Void]() {
-    override def onJobQueued(job: JobHandle[Void]): Unit = { }
-    override def onJobStarted(job: JobHandle[Void]): Unit = { }
+    override def onJobQueued(job: JobHandle[Void]): Unit = {}
+
+    override def onJobStarted(job: JobHandle[Void]): Unit = {}
 
     override def onJobCancelled(job: JobHandle[Void]): Unit = {
       transition(SessionState.Error())
@@ -242,7 +241,9 @@ class InteractiveSession(
 
   def cancelJob(id: Long): Unit = {
     recordActivity()
-    operations.remove(id).foreach { client.cancel }
+    operations.remove(id).foreach {
+      client.cancel
+    }
   }
 
   @tailrec
@@ -302,7 +303,7 @@ class InteractiveSession(
     Option(livyConf.get(RSCConf.Entry.PYSPARK_ARCHIVES))
       .map(_.split(",").toSeq)
       .getOrElse {
-        sys.env.get("SPARK_HOME") .map { case sparkHome =>
+        sys.env.get("SPARK_HOME").map { case sparkHome =>
           val pyLibPath = Seq(sparkHome, "python", "lib").mkString(File.separator)
           val pyArchivesFile = new File(pyLibPath, "pyspark.zip")
           require(pyArchivesFile.exists(),
@@ -339,6 +340,6 @@ class InteractiveSession(
     val opId = operationCounter.incrementAndGet()
     operations(opId) = future
     opId
-   }
+  }
 
 }

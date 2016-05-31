@@ -92,8 +92,8 @@ public class RSCClient implements LivyClient {
     this.contextInfo = info;
 
     LOG.info("Trying to connect to the RSCServer on the following address");
-    LOG.info("Address: " + ctx.getRemoteAddress());
-    LOG.info("Port: " + ctx.getRemotePort());
+    LOG.info("Address: " + info.getRemoteAddress());
+    LOG.info("Port: " + info.getRemotePort());
     try {
       Promise<Rpc> promise = Rpc.createClient(conf,
         eventLoopGroup,
