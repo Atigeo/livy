@@ -215,7 +215,6 @@ public class Rpc implements Closeable {
   private final AtomicBoolean rpcClosed;
   private final AtomicLong rpcId;
   private final Channel channel;
-  private final Collection<Listener> listeners;
   private final EventExecutorGroup egroup;
   private final Object channelLock;
   private volatile RpcDispatcher dispatcher;
@@ -228,23 +227,17 @@ public class Rpc implements Closeable {
     this.channelLock = new Object();
     this.dispatcher = null;
     this.egroup = egroup;
-    this.listeners = new LinkedList<>();
     this.rpcClosed = new AtomicBoolean();
     this.rpcId = new AtomicLong();
 
     // Note: this does not work for embedded channels.
     channel.pipeline().addLast("monitor", new ChannelInboundHandlerAdapter() {
         @Override
-        public void channelInactive(ChannelHandlerContext ctx) {
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
           close();
+          super.channelInactive(ctx);
         }
     });
-  }
-
-  public void addListener(Listener l) {
-    synchronized (listeners) {
-      listeners.add(l);
-    }
   }
 
   /**
@@ -268,7 +261,7 @@ public class Rpc implements Closeable {
     Utils.checkState(channel.isOpen(), "RPC channel is closed.");
     try {
       final long id = rpcId.getAndIncrement();
-      final Promise<T> promise = createPromise();
+      final Promise<T> promise = egroup.next().newPromise();
       ChannelFutureListener listener = new ChannelFutureListener() {
           @Override
           public void operationComplete(ChannelFuture cf) {
@@ -292,13 +285,6 @@ public class Rpc implements Closeable {
     }
   }
 
-  /**
-   * Creates a promise backed by this RPC's event loop.
-   */
-  public <T> Promise<T> createPromise() {
-    return egroup.next().newPromise();
-  }
-
   public Channel getChannel() {
     return channel;
   }
@@ -319,23 +305,7 @@ public class Rpc implements Closeable {
       channel.close().sync();
     } catch (InterruptedException ie) {
       Thread.interrupted();
-    } finally {
-      synchronized (listeners) {
-        for (Listener l : listeners) {
-          try {
-            l.rpcClosed(this);
-          } catch (Exception e) {
-            LOG.warn("Error caught in Rpc.Listener invocation.", e);
-          }
-        }
-      }
     }
-  }
-
-  public interface Listener {
-
-    void rpcClosed(Rpc rpc);
-
   }
 
   static enum MessageType {

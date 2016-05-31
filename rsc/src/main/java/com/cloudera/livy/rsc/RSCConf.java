@@ -42,22 +42,27 @@ public class RSCConf extends ClientConf<RSCConf> {
   public static enum Entry implements ConfEntry {
     CLIENT_ID("client.auth.id", null),
     CLIENT_SECRET("client.auth.secret", null),
-    CLIENT_IN_PROCESS("client.do_not_use.run_driver_in_process", null),
+    CLIENT_IN_PROCESS("client.do_not_use.run_driver_in_process", false),
     CLIENT_SHUTDOWN_TIMEOUT("client.shutdown_timeout", "10s"),
     DRIVER_CLASS("driver_class", null),
+    SESSION_KIND("session.kind", null),
 
     LIVY_JARS("jars", null),
     SPARKR_PACKAGE("sparkr.package", null),
+    PYSPARK_ARCHIVES("pyspark.archives", null),
 
     // Address for the RSC driver to connect back with it's connection info.
     LAUNCHER_ADDRESS("launcher.address", null),
     LAUNCHER_PORT("launcher.port", -1),
 
+    // How long will the RSC wait for a connection for a Livy server before shutting itself down.
+    SERVER_IDLE_TIMEOUT("server.idle_timeout", "10m"),
+
     PROXY_USER("proxy_user", null),
 
     RPC_SERVER_ADDRESS("rpc.server.address", null),
-    RPC_CLIENT_HANDSHAKE_TIMEOUT("server.connect.timeout", "90000ms"),
-    RPC_CLIENT_CONNECT_TIMEOUT("client.connect.timeout", "10000ms"),
+    RPC_CLIENT_HANDSHAKE_TIMEOUT("server.connect.timeout", "90s"),
+    RPC_CLIENT_CONNECT_TIMEOUT("client.connect.timeout", "10s"),
     RPC_CHANNEL_LOG_LEVEL("channel.log.level", null),
     RPC_MAX_MESSAGE_SIZE("rpc.max.size", 50 * 1024 * 1024),
     RPC_MAX_THREADS("rpc.threads", 8),
@@ -70,7 +75,7 @@ public class RSCConf extends ClientConf<RSCConf> {
     private final Object dflt;
 
     private Entry(String key, Object dflt) {
-      this.key = "livy.local." + key;
+      this.key = "livy.rsc." + key;
       this.dflt = dflt;
     }
 

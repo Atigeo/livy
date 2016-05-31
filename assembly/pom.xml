@@ -21,12 +21,12 @@
   <parent>
     <groupId>com.cloudera.livy</groupId>
     <artifactId>livy-main</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>livy-assembly</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <version>0.3.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <properties>
@@ -84,13 +84,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-install-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
       </plugin>
     </plugins>
   </build>
