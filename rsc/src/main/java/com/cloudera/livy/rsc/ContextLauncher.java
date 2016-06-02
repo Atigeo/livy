@@ -246,22 +246,22 @@ class ContextLauncher {
             // Define how to pass options to the child process. If launching in client (or local)
             // mode, the driver options need to be passed directly on the command line. Otherwise,
             // SparkSubmit will take care of that for us.
-            String master = conf.get("spark.master");
-            String principal = conf.get("spark.yarn.principal");
-            String keytabFile = conf.get("spark.yarn.keytabfile");
+            //String master = conf.get("spark.master");
+//            String principal = conf.get("spark.yarn.principal");
+//            String keytabFile = conf.get("spark.yarn.keytabfile");
             String driverPythonPath = conf.get(SPARK_PYSPARK_PYTHON_DRIVER);
             String slavePythonPath = conf.get(SPARK_PYSPARK_PYTHON);
 
-            Utils.checkArgument(master != null, "spark.master is not defined.");
-            launcher.setMaster(master);
+            //Utils.checkArgument(master != null, "spark.master is not defined.");
+            //launcher.setMaster(master);
             launcher.setPropertiesFile(confFile.getAbsolutePath());
 
             // Add the keytab and principal with which the SparkContext should connect
             // to a kerberized cluster
-            if (keytabFile != null && principal != null) {
-                launcher.setConf("spark.yarn.keytab", keytabFile);
-                launcher.setConf("spark.yarn.principal", principal);
-            }
+//            if (keytabFile != null && principal != null) {
+//                launcher.setConf("spark.yarn.keytab", keytabFile);
+//                launcher.setConf("spark.yarn.principal", principal);
+//            }
 
             if (driverPythonPath != null) {
                 launcher.setConf(SPARK_PYSPARK_PYTHON_DRIVER, driverPythonPath);
