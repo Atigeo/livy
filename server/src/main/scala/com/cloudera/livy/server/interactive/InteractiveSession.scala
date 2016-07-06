@@ -49,6 +49,7 @@ object InteractiveSession {
   val SparkKerberosPrincipal = "spark.yarn.principal"
   val SparkDriverPythonPath = "spark.yarn.appMasterEnv.PYSPARK_DRIVER_PYTHON"
   val SparkSlavePythonPath = "spark.yarn.appMasterEnv.PYSPARK_PYTHON"
+  val SparkMasterName = "spark.master"
 }
 
 class InteractiveSession(
@@ -74,6 +75,7 @@ class InteractiveSession(
   private val SPARK_DRIVER_PYTHON_PATH = LivyConf.Entry("livy.spark.yarn.driver.pythonpath", null)
   private val SPARK_SLAVE_PYTHON_PATH = LivyConf.Entry("livy.spark.yarn.slave.pythonpath", null)
   private val LIVY_LOCAL_SERVER_ADDRESS = LivyConf.Entry("livy.local.server.address", null)
+  private val SPARK_MASTER_NAME = LivyConf.Entry("livy.spark.master.name", null)
 
 
   private var _state: SessionState = SessionState.Starting()
@@ -92,6 +94,7 @@ class InteractiveSession(
       .setConf(SparkKerberosPrincipal, livyConf.get(SPARK_KERBEROS_PRINCIPAL))
       .setConf(SparkDriverPythonPath, livyConf.get(SPARK_DRIVER_PYTHON_PATH))
       .setConf(SparkSlavePythonPath, livyConf.get(SPARK_SLAVE_PYTHON_PATH))
+      .setConf(SparkMasterName, livyConf.get(SPARK_MASTER_NAME))
 
     // Set the local server address - used when trying to serve livy from a docker container because otherwise
     // you would get the address that's inside the container

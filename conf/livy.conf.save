@@ -32,19 +32,17 @@
 
 # Location of the SparkR package. By default Livy will upload the file from SPARK_HOME, but
 # by caching the file in HDFS, startup time of R sessions on YARN can be reduced.
-# livy.sparkr.package =${SPARK_HOME}/R/lib/sparkr.zip#sparkr
+# livy.sparkr.package =
 
 # List of local directories from where files are allowed to be added to user sessions. By
 # default it's empty, meaning users can only reference remote URIs when starting their
 # sessions.
-# livy.file.local-dir-whitelist =/usr/local/spark/R/lib/
+# livy.file.local-dir-whitelist =
 
 #livy.spark.principal.id = livy@STAGING.XPATTERNS.COM
 #livy.spark.keytabfile.path = /usr/local/keytabs/livy.keytab
 livy.local.server.address=10.3.22.22
 livy.server.session.factory = yarn
-livy.spark.yarn.driver.pythonpath=/Users/chris/Virtualenvs/xpatterns-venv/bin/python
-livy.spark.yarn.slave.pythonpath=/Users/chris/Virtualenvs/xpatterns-venv/bin/python
-livy.sparkr.package =${SPARK_HOME}/R/lib/sparkr.zip#sparkr
+livy.spark.yarn.driver.pythonpath=/usr/local/xpatterns/xpatterns-analytics/bin/python
+livy.spark.yarn.slave.pythonpath=/Users/chris/Virtualenvs/xpatterns-venv
 livy.impersonation.enabled = true
-livy.spark.master.name=local

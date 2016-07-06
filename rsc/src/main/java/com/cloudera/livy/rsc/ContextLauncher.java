@@ -74,6 +74,7 @@ class ContextLauncher {
     private static final String SPARK_HOME_KEY = "spark.home";
     private static final String SPARK_PYSPARK_PYTHON_DRIVER = "spark.yarn.appMasterEnv.PYSPARK_DRIVER_PYTHON";
     private static final String SPARK_PYSPARK_PYTHON = "spark.yarn.appMasterEnv.PYSPARK_PYTHON";
+    private static final String SPARK_MASTER = "spark.master";
 
     static Promise<ContextInfo> create(RSCClientFactory factory, RSCConf conf)
             throws IOException {
@@ -246,16 +247,17 @@ class ContextLauncher {
             // Define how to pass options to the child process. If launching in client (or local)
             // mode, the driver options need to be passed directly on the command line. Otherwise,
             // SparkSubmit will take care of that for us.
-            //String master = conf.get("spark.master");
+            String master = conf.get(SPARK_MASTER);
 //            String principal = conf.get("spark.yarn.principal");
 //            String keytabFile = conf.get("spark.yarn.keytabfile");
             String driverPythonPath = conf.get(SPARK_PYSPARK_PYTHON_DRIVER);
             String slavePythonPath = conf.get(SPARK_PYSPARK_PYTHON);
 
-            //Utils.checkArgument(master != null, "spark.master is not defined.");
-            //launcher.setMaster(master);
+            // Utils.checkArgument(master != null, "spark.master is not defined.");
             launcher.setPropertiesFile(confFile.getAbsolutePath());
-
+            if(master != null){
+                launcher.setMaster(master);
+            }
             // Add the keytab and principal with which the SparkContext should connect
             // to a kerberized cluster
 //            if (keytabFile != null && principal != null) {
