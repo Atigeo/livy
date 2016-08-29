@@ -144,6 +144,7 @@ A few things changed between since Livy 0.1 that require manual intervention whe
   * ``livy.server.spark-submit``: replaced by the ``SPARK_HOME`` environment variable.
 
 To set the
+
 Spark Example
 =============
 
