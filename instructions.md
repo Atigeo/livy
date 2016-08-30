@@ -1,7 +1,7 @@
 Instructions
 ============
 
-See instructions in README.md to get started.  These instructions are specific to the Atigeo branch.
+See instructions in README.rst to get started.  These instructions are specific to the Atigeo branch.
 
 
 Build
@@ -23,7 +23,9 @@ You need to have a local spark download, at least.
 We are running spark 1.6.0 as of now.
 Download spark from the web and extract it somewhere locally. Make livy conf point to it.
 
-The way it is deployed is by adding all of the files in assembly in a tar.gz file which is then posted to S3.
+The way it is deployed is by adding all of the files in assembly in a zip file which is then posted to S3.
+Then a project ```xpatterns-livy-docker``` builds a docker, pulling livy from S3.
+
 You'll need to ask devops for proper instructions on deploying it.
 
 Configure: Livy.conf
@@ -56,12 +58,35 @@ If you are running spark R
 Use impersonation (requires kerberos)
 
     livy.impersonation.enabled = true
+    
+Build and Copy to S3
+--------------------
+These instructions were derived from reverse engineering the existing code and 
+deployed instances, and may be vague or inaccurate.
 
-Docker
-======
+As stated above, livy is build locally, then copied to S3.  The top level pom includes 
+a version, currently 0.3.0-SNAPSHOT.  When the project is build with maven, it creates 
+a file assembly/target/livy-server-3.0-SNAPSHOT.zip.  This needs to be converted to tar.gz 
+and copied to S3.
 
-The code here also includes the ability to build and run in a docker.
-There are various configurable items in the Docker, including kerberos information, 
-that must be changed.
+One way to 
 
-In Dockerfile, it appears that there is no conf/s3cfg.  Where would this come from?
+The version of livy that is currently deployed is 0.2.0.  These instructions
+are for deploying 0.3.0.  To pick up this new version, edit Dockerfile in spatterns-livy-docker.
+The path is in XPATTERNS_LIVY_DOWNLOAD_LINK.
+Adjust the version numbers there to deploy 0.3.0.
+
+
+    $ cd assembly/target/
+    $ unzip livy-server-0.3.0-SNAPSHOT.zip
+    $ tar -cfz livy-server-0.3.0-SNAPSHOT.tar.gz livy-server-0.3.0-SNAPSHOT
+    $ rm -rf livy-server-0.3.0-SNAPSHOT
+    $ s3cmd put livy-server-0.3.0-SNAPSHOT.tar.gz s3://xpatterns/livy/0.3.0/livy-server-0.3.0-SNAPSHOT.tar.gz
+    
+You need to set up an appropriate s3 configuration file for s3cmd, containing
+the access key and secret key for S3.  These instructions assume that you have an
+AWS account with write priviliges, and that you have specified the access key in 
+```$HOME/.s3cfg```.
+
+
+
