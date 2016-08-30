@@ -79,7 +79,7 @@ Adjust the version numbers there to deploy 0.3.0.
 
     $ cd assembly/target/
     $ unzip livy-server-0.3.0-SNAPSHOT.zip
-    $ tar -cfz livy-server-0.3.0-SNAPSHOT.tar.gz livy-server-0.3.0-SNAPSHOT
+    $ tar cvfz livy-server-0.3.0-SNAPSHOT.tar.gz livy-server-0.3.0-SNAPSHOT
     $ rm -rf livy-server-0.3.0-SNAPSHOT
     $ s3cmd put livy-server-0.3.0-SNAPSHOT.tar.gz s3://xpatterns/livy/0.3.0/livy-server-0.3.0-SNAPSHOT.tar.gz
     
