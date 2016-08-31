@@ -37,11 +37,13 @@ Download spark from the web and extract it somewhere locally. Make livy conf poi
 The way it is deployed is by adding all of the files in assembly in a zip file which is then posted to S3.
 Then a project ```xpatterns-livy-docker``` builds a docker, pulling livy from S3.
 
-You'll need to ask devops for proper instructions on deploying it.
+The docker is deployed in production using the normal process with xpatterns-docker-compose.
 
 Configure: Livy.conf
 -------------------
 You will likely need to change everything in livy.conf.
+Many of these are overridden by configurations given at docker build time, so these
+are only used as defaults.
 
 The IP address where we are running
 
@@ -80,14 +82,6 @@ a version, currently 0.3.0-SNAPSHOT.  When the project is build with maven, it c
 a file assembly/target/livy-server-3.0-SNAPSHOT.zip.  This needs to be converted to tar.gz 
 and copied to S3.
 
-One way to 
-
-The version of livy that is currently deployed is 0.2.0.  These instructions
-are for deploying 0.3.0.  To pick up this new version, edit Dockerfile in spatterns-livy-docker.
-The path is in XPATTERNS_LIVY_DOWNLOAD_LINK.
-Adjust the version numbers there to deploy 0.3.0.
-
-
     $ cd assembly/target/
     $ unzip livy-server-0.3.0-SNAPSHOT.zip
     $ tar cfz livy-server-0.3.0-SNAPSHOT.tar.gz livy-server-0.3.0-SNAPSHOT
@@ -100,9 +94,14 @@ AWS account with write priviliges, and that you have specified the access key in
 ```$HOME/.s3cfg```.
 
 
+Unified Project Structure
+=========================
+Currently, the docker is built using a separate project: xpatterns-livy-docker.  
+This extra step is unnecessarily complicated.  The docker could instead be built with the docker
+present here.  
 
 Docker Build
-============
+------------
     $ docker build .
 
 Jenkins Docker Build
@@ -120,3 +119,16 @@ docker push $DOCKER_REGISTRY/$BUILD_NAME:$branch_name
 
 git tag ${RELEASE_VERSION} 
 git push origin ${RELEASE_VERSION}
+```
+
+Additional Changes
+------------------
+When the projects are unified, the following additional changes need to be made.
+1.  The save and fetch through S3 should be eliminated.  Maven should build the
+assembly, and then the docker build should use that.
+2.  Maven should either build a tar.gz, or the docker should unpack from a zip, so that the conversion
+step from zip to tar.gz is eliminated.
+3.  The project should be moved from github to atigeo internal gitlab.
+4.  Jenkins should be modified to look at the new gitlab repo, and to build the library then the
+docker.
+
