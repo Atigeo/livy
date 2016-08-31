@@ -1,8 +1,19 @@
 Instructions
 ============
 
-See instructions in README.rst to get started.  These instructions are specific to the Atigeo branch.
+See instructions in README.rst to get started. 
+These instructions are specific to the Atigeo branch.
 
+Overview
+--------
+Livy is a spark job server with a REST interface.  Livy creates and owns the SparkContext, and
+impersonates a specific user.  Python code to execute is submitted in string form to
+Livy, which interprets it in its own process, where it has access to the SparkContext.
+
+Livy itself is in a different project in github (https://github.com/Atigeo/livy.git).  That project builds a zip, which is stored
+in S3.  This project picks up that file and builds a docker.  It does not contain the Livy code
+itself.  See instructions.md in that project for instructions on how to build the zip file, and how to
+test locally with Livy.
 
 Build
 -----
@@ -79,7 +90,7 @@ Adjust the version numbers there to deploy 0.3.0.
 
     $ cd assembly/target/
     $ unzip livy-server-0.3.0-SNAPSHOT.zip
-    $ tar cvfz livy-server-0.3.0-SNAPSHOT.tar.gz livy-server-0.3.0-SNAPSHOT
+    $ tar cfz livy-server-0.3.0-SNAPSHOT.tar.gz livy-server-0.3.0-SNAPSHOT
     $ rm -rf livy-server-0.3.0-SNAPSHOT
     $ s3cmd put livy-server-0.3.0-SNAPSHOT.tar.gz s3://xpatterns/livy/0.3.0/livy-server-0.3.0-SNAPSHOT.tar.gz
     
@@ -90,3 +101,22 @@ AWS account with write priviliges, and that you have specified the access key in
 
 
 
+Docker Build
+============
+    $ docker build .
+
+Jenkins Docker Build
+--------------------
+The code in Jenkins to build the docker is shown below.
+
+```
+BUILD_NAME=xpatterns-livy
+
+docker build --no-cache -t $DOCKER_REGISTRY/$BUILD_NAME:${RELEASE_VERSION} .
+docker tag -f $DOCKER_REGISTRY/$BUILD_NAME:${RELEASE_VERSION} $DOCKER_REGISTRY/$BUILD_NAME:$branch_name
+
+docker push $DOCKER_REGISTRY/$BUILD_NAME:${RELEASE_VERSION}
+docker push $DOCKER_REGISTRY/$BUILD_NAME:$branch_name
+
+git tag ${RELEASE_VERSION} 
+git push origin ${RELEASE_VERSION}
